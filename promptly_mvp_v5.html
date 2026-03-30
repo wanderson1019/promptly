@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promptly</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21; --border: #2a2a32;
+    --accent: #c8f060; --accent2: #7b6ef6; --text: #f0f0f5; --muted: #6b6b80;
+    --muted2: #9090a8; --serif: 'Instrument Serif', serif; --mono: 'DM Mono', monospace; --sans: 'Outfit', sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(200,240,96,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(200,240,96,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(123,110,246,0.08) 0%, transparent 70%); top: -200px; right: -200px; pointer-events: none; z-index: 0; }
+  header { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; border-bottom: 1px solid var(--border); }
+  .logo-word { font-family: var(--serif); font-size: 24px; color: var(--text); }
+  .logo-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; display: inline-block; margin-left: 4px; margin-bottom: 2px; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+  .badge { font-size: 10px; font-family: var(--mono); color: var(--accent); background: rgba(200,240,96,0.1); border: 1px solid rgba(200,240,96,0.2); padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+  .credits-display { font-size: 13px; color: var(--muted2); font-family: var(--mono); }
+  .credits-count { color: var(--accent); font-weight: 500; }
+  main { position: relative; z-index: 10; max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+  .hero { text-align: center; margin-bottom: 40px; animation: fadeUp 0.6s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .hero h1 { font-family: var(--serif); font-size: clamp(34px,6vw,50px); line-height: 1.1; margin-bottom: 14px; }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero p { font-size: 15px; color: var(--muted2); line-height: 1.6; max-width: 480px; margin: 0 auto; font-weight: 300; }
+
+  .quality-meter { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 14px; }
+  .quality-meter-label { font-size: 11px; font-family: var(--mono); color: var(--muted2); white-space: nowrap; }
+  .quality-bar-track { flex: 1; height: 5px; background: var(--surface2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
+  .quality-bar-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.4s ease; width: 15%; }
+  .quality-score { font-size: 12px; font-family: var(--mono); color: var(--accent); min-width: 32px; text-align: right; }
+  .quality-tip { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 20px; padding: 0 4px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px; animation: fadeUp 0.6s 0.1s ease both; }
+  .section-divider { font-size: 10px; font-family: var(--mono); color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin: 24px 0 16px; display: flex; align-items: center; gap: 10px; }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-divider .sub { color: var(--muted); font-size: 9px; background: var(--surface2); border: 1px solid var(--border); padding: 1px 7px; border-radius: 10px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field label { font-size: 10px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+  .opt { font-size: 9px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 1px 5px; border-radius: 5px; }
+  .field select, .field textarea, .field input[type=text] {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; color: var(--text);
+    font-family: var(--sans); font-size: 13px; padding: 11px 13px; outline: none; transition: border-color 0.2s; appearance: none; -webkit-appearance: none;
+  }
+  .field select:focus, .field textarea:focus, .field input:focus { border-color: rgba(200,240,96,0.4); }
+  .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-weight: 300; }
+  .field textarea::placeholder, .field input::placeholder { color: var(--muted); }
+  .field-full { grid-column: 1/-1; }
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 11px; }
+
+  .style-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { padding: 5px 13px; border-radius: 20px; font-size: 11px; font-family: var(--mono); border: 1px solid var(--border); background: var(--surface2); color: var(--muted2); cursor: pointer; transition: all 0.15s; user-select: none; }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.active { background: rgba(200,240,96,0.12); border-color: rgba(200,240,96,0.4); color: var(--accent); }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 11px 14px; cursor: pointer; transition: all 0.2s; user-select: none; margin-bottom: 10px; }
+  .toggle-row:hover { border-color: rgba(200,240,96,0.3); }
+  .toggle-row.active { border-color: rgba(200,240,96,0.4); background: rgba(200,240,96,0.06); }
+  .toggle-label { font-size: 12px; color: var(--muted2); display: flex; align-items: center; gap: 9px; }
+  .toggle-row.active .toggle-label { color: var(--text); }
+  .toggle-switch { width: 34px; height: 18px; background: var(--border); border-radius: 20px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-switch::after { content: ''; position: absolute; width: 12px; height: 12px; background: var(--muted); border-radius: 50%; top: 3px; left: 3px; transition: all 0.2s; }
+  .toggle-row.active .toggle-switch { background: var(--accent); }
+  .toggle-row.active .toggle-switch::after { background: #0d0d0f; left: 19px; }
+
+  /* Dynamic fields animation */
+  .dynamic-fields { transition: all 0.3s ease; }
+  .dynamic-fields.switching { opacity: 0; transform: translateY(6px); }
+
+  .btn-generate { width: 100%; margin-top: 20px; padding: 15px; background: var(--accent); color: #0d0d0f; border: none; border-radius: 12px; font-family: var(--sans); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-generate:hover { background: #d4f570; transform: translateY(-1px); box-shadow: 0 8px 30px rgba(200,240,96,0.2); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .result-area { margin-top: 20px; }
+  .result-label { font-size: 10px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .quality-badge { font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 20px; background: rgba(200,240,96,0.1); color: var(--accent); border: 1px solid rgba(200,240,96,0.2); }
+  .output-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; font-size: 13px; line-height: 1.8; color: #b8b8d0; font-family: var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 380px; overflow-y: auto; }
+  .output-box::-webkit-scrollbar { width: 4px; }
+  .output-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .error-box { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.25); border-radius: 12px; padding: 14px 18px; font-size: 12px; color: #ff9a9a; font-family: var(--mono); line-height: 1.6; white-space: pre-wrap; }
+  .btn-copy { width: 100%; margin-top: 10px; padding: 12px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-copy.copied { border-color: var(--accent); color: var(--accent); background: rgba(200,240,96,0.06); }
+
+  .upgrade-wall { margin-top: 24px; background: linear-gradient(135deg, rgba(123,110,246,0.1), rgba(200,240,96,0.05)); border: 1px solid rgba(123,110,246,0.3); border-radius: 16px; padding: 28px; text-align: center; }
+  .upgrade-wall h3 { font-family: var(--serif); font-size: 22px; margin-bottom: 8px; }
+  .upgrade-wall p { color: var(--muted2); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+  .upgrade-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 400px; margin: 0 auto; }
+  .plan-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 14px; }
+  .plan-card.featured { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+  .plan-name { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .plan-price { font-family: var(--serif); font-size: 24px; color: var(--text); }
+  .plan-price span { font-size: 11px; color: var(--muted2); font-family: var(--sans); }
+  .plan-perks { margin-top: 8px; font-size: 11px; color: var(--muted2); line-height: 1.9; text-align: left; }
+  .perk::before { content: '✓ '; color: var(--accent); }
+  .btn-upgrade { display: block; margin-top: 10px; padding: 9px; background: var(--accent); color: #0d0d0f; border: none; border-radius: 8px; font-family: var(--sans); font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
+  .btn-upgrade:hover { background: #d4f570; }
+
+  .stats { display: flex; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 36px; }
+  .stat { flex: 1; padding: 14px; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-family: var(--serif); font-size: 22px; color: var(--accent); display: block; }
+  .stat-label { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+
+  @media(max-width:580px){
+    header{padding:14px 18px} main{padding:36px 14px 60px} .card{padding:20px}
+    .field-row{grid-template-columns:1fr} .field-row-3{grid-template-columns:1fr 1fr}
+    .upgrade-options{grid-template-columns:1fr} .stats{flex-direction:column}
+    .stat{border-right:none;border-bottom:1px solid var(--border)} .stat:last-child{border-bottom:none}
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<header>
+  <div>
+    <span class="logo-word">Promptly</span>
+    <span class="logo-dot"></span>
+    <span class="badge">MVP</span>
+  </div>
+  <div class="credits-display">
+    <span id="creditsLeft" class="credits-count">3</span> free prompts left
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Your assignments,<br><em>actually done right.</em></h1>
+    <p>Paste your assignment. We engineer the perfect AI prompt so you get the best possible output — not basic answers.</p>
+  </div>
+
+  <div class="quality-meter">
+    <span class="quality-meter-label">Prompt quality</span>
+    <div class="quality-bar-track"><div class="quality-bar-fill" id="qualityBar"></div></div>
+    <span class="quality-score" id="qualityScore">15%</span>
+  </div>
+  <div class="quality-tip" id="qualityTip">💡 Paste your assignment to get started — fill in more fields for a better prompt</div>
+
+  <div class="card">
+    <!-- REQUIRED -->
+    <div class="section-divider">Required</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Subject</label>
+        <div class="select-wrap">
+          <select id="subject" onchange="updateQuality()">
+            <option value="general">General / Other</option>
+            <option value="english">English / Writing</option>
+            <option value="history">History</option>
+            <option value="psychology">Psychology</option>
+            <option value="biology">Biology</option>
+            <option value="chemistry">Chemistry</option>
+            <option value="physics">Physics</option>
+            <option value="math">Math / Statistics</option>
+            <option value="cs">Computer Science</option>
+            <option value="business">Business / Finance</option>
+            <option value="philosophy">Philosophy</option>
+            <option value="sociology">Sociology</option>
+            <option value="political_science">Political Science</option>
+            <option value="economics">Economics</option>
+            <option value="law">Law / Pre-Law</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Assignment Type</label>
+        <div class="select-wrap">
+          <select id="outputType" onchange="switchDynamicFields(); updateQuality();">
+            <optgroup label="Writing">
+              <option value="essay">Essay / Paper</option>
+              <option value="research">Research Paper</option>
+              <option value="analysis">Critical Analysis</option>
+              <option value="discussion_post">Discussion Post</option>
+              <option value="reading_response">Reading Response</option>
+              <option value="case_study">Case Study</option>
+            </optgroup>
+            <optgroup label="STEM">
+              <option value="math_problem">Math / Problem Set</option>
+              <option value="stats">Statistics Assignment</option>
+              <option value="lab_report">Lab Report</option>
+              <option value="coding">Coding Assignment</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="study_guide">Study Guide</option>
+              <option value="outline">Outline</option>
+              <option value="presentation">Presentation</option>
+              <option value="other">Other</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:16px">
+      <label>Paste Your Assignment</label>
+      <textarea id="assignmentInput" placeholder="Paste your full assignment instructions here. The more detail, the better your prompt..." oninput="updateQuality()"></textarea>
+    </div>
+
+    <!-- OPTIONAL UNIVERSAL -->
+    <div class="section-divider">Personalize <span class="sub">optional — more = better</span></div>
+    <div class="field-row" style="margin-bottom:14px">
+      <div class="field">
+        <label>Academic Level <span class="opt">optional</span></label>
+        <div class="select-wrap">
+          <select id="academicLevel" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="high_school">High School</option>
+            <option value="freshman">College Freshman</option>
+            <option value="sophomore">Sophomore</option>
+            <option value="junior">Junior</option>
+            <option value="senior">Senior</option>
+            <option value="grad">Grad Student</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Professor Type <span class="opt">optional</span></label>
+        <div class="select-wrap">
+          <select id="profStrictness" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="chill">Chill / Easy grader</option>
+            <option value="moderate">Moderate</option>
+            <option value="strict">Strict / Hard grader</option>
+            <option value="research">Research-focused</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- DYNAMIC FIELDS based on assignment type -->
+    <div class="dynamic-fields" id="dynamicFields"></div>
+
+    <!-- AI Detection toggle — always shown -->
+    <div class="toggle-row" id="aiDetectionToggle" onclick="toggleAIDetection()">
+      <span class="toggle-label">🛡️ &nbsp;Avoid AI detection — natural, human-sounding output</span>
+      <div class="toggle-switch"></div>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generate()">Generate My Prompt →</button>
+    <div id="resultArea" class="result-area" style="display:none"></div>
+  </div>
+
+  <div id="upgradeWall" style="display:none">
+    <div class="upgrade-wall">
+      <h3>You've hit your free limit</h3>
+      <p>Upgrade to keep going — students on Pro get dramatically better results on every assignment.</p>
+      <div class="upgrade-options">
+        <div class="plan-card">
+          <div class="plan-name">Monthly</div>
+          <div class="plan-price">$7<span>/mo</span></div>
+          <div class="plan-perks">
+            <div class="perk">Unlimited prompts</div>
+            <div class="perk">All subjects & types</div>
+            <div class="perk">Priority speed</div>
+          </div>
+          <button class="btn-upgrade" onclick="alert('Coming soon! Drop your email to get early access.')">Get Pro</button>
+        </div>
+        <div class="plan-card featured">
+          <div class="plan-name">Semester</div>
+          <div class="plan-price">$19<span>/sem</span></div>
+          <div class="plan-perks">
+            <div class="perk">Everything in Monthly</div>
+            <div class="perk">Prompt history</div>
+            <div class="perk">Best value</div>
+          </div>
+          <button class="btn-upgrade" onclick="alert('Coming soon! Drop your email to get early access.')">Get Pro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-num">10×</span><span class="stat-label">better output</span></div>
+    <div class="stat"><span class="stat-num">~2min</span><span class="stat-label">avg time saved</span></div>
+    <div class="stat"><span class="stat-num">Free</span><span class="stat-label">to start</span></div>
+  </div>
+</main>
+
+<script>
+  const WORKER_URL = "https://promptly-api.will-5c5.workers.dev";
+  let credits = 3;
+  let aiDetectionOn = false;
+
+  // Dynamic field configs per assignment type
+  const fieldConfigs = {
+    essay: `
+      <div class="field-row">
+        <div class="field">
+          <label>Writing Style <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_style" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="academic">Academic / Formal</option>
+            <option value="conversational">Conversational</option>
+            <option value="analytical">Analytical</option>
+            <option value="persuasive">Persuasive / Argumentative</option>
+            <option value="creative">Creative</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Word Count <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_wordcount" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="under250">Under 250 words</option>
+            <option value="250-500">250–500 words</option>
+            <option value="500-1000">500–1,000 words</option>
+            <option value="1000-2000">1,000–2,000 words</option>
+            <option value="2000+">2,000+ words</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Citation Style <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_citation" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="MLA">MLA</option>
+            <option value="APA">APA</option>
+            <option value="Chicago">Chicago</option>
+            <option value="Harvard">Harvard</option>
+            <option value="none">No citations needed</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Argument Stance <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_stance" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="for">Argue for / Pro</option>
+            <option value="against">Argue against</option>
+            <option value="balanced">Balanced / Both sides</option>
+            <option value="devils_advocate">Devil's advocate</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    research: `
+      <div class="field-row">
+        <div class="field">
+          <label>Citation Style <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_citation" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="MLA">MLA</option>
+            <option value="APA">APA</option>
+            <option value="Chicago">Chicago</option>
+            <option value="Harvard">Harvard</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Source Type <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_sources" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="peer_reviewed">Peer-reviewed only</option>
+            <option value="any">Any credible sources</option>
+            <option value="primary">Primary sources only</option>
+            <option value="no_sources">No outside sources</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Word Count <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_wordcount" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="500-1000">500–1,000 words</option>
+            <option value="1000-2000">1,000–2,000 words</option>
+            <option value="2000-4000">2,000–4,000 words</option>
+            <option value="4000+">4,000+ words</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Argument Stance <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_stance" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="for">Argue for</option>
+            <option value="against">Argue against</option>
+            <option value="balanced">Balanced</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    analysis: `
+      <div class="field-row">
+        <div class="field">
+          <label>Analysis Focus <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_focus" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="literary">Literary / Textual</option>
+            <option value="historical">Historical context</option>
+            <option value="rhetorical">Rhetorical</option>
+            <option value="philosophical">Philosophical</option>
+            <option value="data">Data / Statistical</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Word Count <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_wordcount" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="250-500">250–500</option>
+            <option value="500-1000">500–1,000</option>
+            <option value="1000-2000">1,000–2,000</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Citation Style <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_citation" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="MLA">MLA</option><option value="APA">APA</option>
+            <option value="Chicago">Chicago</option><option value="none">None</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Quote Requirement <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_quotes" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="none">No quotes needed</option>
+            <option value="1-2">1–2 quotes</option>
+            <option value="3-5">3–5 quotes</option>
+            <option value="many">As many as needed</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    discussion_post: `
+      <div class="field-row">
+        <div class="field">
+          <label>Word Count <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_wordcount" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="under150">Under 150 words</option>
+            <option value="150-300">150–300 words</option>
+            <option value="300-500">300–500 words</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Tone <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_tone" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="academic">Academic</option>
+            <option value="conversational">Conversational</option>
+            <option value="opinionated">Opinionated / Personal</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    reading_response: `
+      <div class="field-row">
+        <div class="field">
+          <label>Response Focus <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_focus" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="summary">Summary + reaction</option>
+            <option value="analysis">Deep analysis</option>
+            <option value="connection">Connect to other texts</option>
+            <option value="personal">Personal reflection</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Word Count <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_wordcount" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="under250">Under 250</option>
+            <option value="250-500">250–500</option>
+            <option value="500+">500+</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    case_study: `
+      <div class="field-row">
+        <div class="field">
+          <label>Framework <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_framework" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="SWOT">SWOT Analysis</option>
+            <option value="PEST">PEST Analysis</option>
+            <option value="Porter">Porter's Five Forces</option>
+            <option value="BCG">BCG Matrix</option>
+            <option value="none">No specific framework</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Recommendation <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_rec" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="yes">Include recommendation</option>
+            <option value="no">Analysis only</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    math_problem: `
+      <div class="field-row">
+        <div class="field">
+          <label>Show Work? <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_showwork" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="all_steps">Show every step</option>
+            <option value="key_steps">Key steps only</option>
+            <option value="answer_only">Final answer only</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Explanation Level <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_explain" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="just_solve">Just solve it</option>
+            <option value="brief">Brief explanation</option>
+            <option value="full">Full step-by-step explanation</option>
+            <option value="teach">Teach me how to do it</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Required Method / Formula <span class="opt">optional</span></label>
+        <input type="text" id="d_method" placeholder="e.g. integration by parts, quadratic formula, chain rule..." oninput="updateQuality()">
+      </div>`,
+
+    stats: `
+      <div class="field-row">
+        <div class="field">
+          <label>Software <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_software" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="R">R</option>
+            <option value="Python">Python</option>
+            <option value="SPSS">SPSS</option>
+            <option value="Excel">Excel</option>
+            <option value="Minitab">Minitab</option>
+            <option value="hand">By hand (no software)</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Test Type <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_test" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="hypothesis">Hypothesis test</option>
+            <option value="regression">Regression</option>
+            <option value="anova">ANOVA</option>
+            <option value="descriptive">Descriptive stats</option>
+            <option value="probability">Probability</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Show Work? <span class="opt">optional</span></label>
+        <div class="select-wrap"><select id="d_showwork" onchange="updateQuality()">
+          <option value="">Not specified</option>
+          <option value="all_steps">Show all steps</option>
+          <option value="key_steps">Key steps only</option>
+          <option value="answer">Answer + interpretation only</option>
+        </select></div>
+      </div>`,
+
+    lab_report: `
+      <div class="field-row">
+        <div class="field">
+          <label>Sections Needed <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_sections" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="full">Full report (all sections)</option>
+            <option value="intro_methods">Intro + Methods only</option>
+            <option value="results_discussion">Results + Discussion only</option>
+            <option value="abstract">Abstract only</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Science Type <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_scitype" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="biology">Biology</option>
+            <option value="chemistry">Chemistry</option>
+            <option value="physics">Physics</option>
+            <option value="psychology">Psychology</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    coding: `
+      <div class="field-row">
+        <div class="field">
+          <label>Language <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_lang" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="Python">Python</option>
+            <option value="Java">Java</option>
+            <option value="C++">C++</option>
+            <option value="JavaScript">JavaScript</option>
+            <option value="R">R</option>
+            <option value="SQL">SQL</option>
+            <option value="other">Other</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Code Comments <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_comments" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="full">Fully commented</option>
+            <option value="key">Key lines only</option>
+            <option value="none">No comments</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Complexity <span class="opt">optional</span></label>
+        <div class="select-wrap"><select id="d_complexity" onchange="updateQuality()">
+          <option value="">Not specified</option>
+          <option value="beginner">Beginner — keep it simple</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced — optimize for performance</option>
+        </select></div>
+      </div>`,
+
+    study_guide: `
+      <div class="field-row">
+        <div class="field">
+          <label>Format <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_format" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="bullet">Bullet points</option>
+            <option value="qa">Q&A format</option>
+            <option value="flashcard">Flashcard style</option>
+            <option value="summary">Narrative summary</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Exam Type <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_exam" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="multiple_choice">Multiple choice</option>
+            <option value="essay">Essay exam</option>
+            <option value="short_answer">Short answer</option>
+            <option value="problem_based">Problem-based</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    outline: `
+      <div class="field-row">
+        <div class="field">
+          <label>Outline Depth <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_depth" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="basic">Basic (I, II, III)</option>
+            <option value="detailed">Detailed with sub-points</option>
+            <option value="full_sentences">Full sentence outline</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Purpose <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_purpose" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="essay">For an essay</option>
+            <option value="presentation">For a presentation</option>
+            <option value="research">For a research paper</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    presentation: `
+      <div class="field-row">
+        <div class="field">
+          <label>Slide Count <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_slides" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="5-8">5–8 slides</option>
+            <option value="8-12">8–12 slides</option>
+            <option value="12-20">12–20 slides</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label>Time Limit <span class="opt">optional</span></label>
+          <div class="select-wrap"><select id="d_time" onchange="updateQuality()">
+            <option value="">Not specified</option>
+            <option value="5min">5 minutes</option>
+            <option value="10min">10 minutes</option>
+            <option value="15min">15 minutes</option>
+            <option value="20+min">20+ minutes</option>
+          </select></div>
+        </div>
+      </div>`,
+
+    other: ``
+  };
+
+  function switchDynamicFields() {
+    const type = document.getElementById('outputType').value;
+    const container = document.getElementById('dynamicFields');
+    container.classList.add('switching');
+    setTimeout(() => {
+      container.innerHTML = fieldConfigs[type] || '';
+      container.classList.remove('switching');
+      updateQuality();
+    }, 150);
+  }
+
+  function toggleAIDetection() {
+    aiDetectionOn = !aiDetectionOn;
+    document.getElementById('aiDetectionToggle').classList.toggle('active', aiDetectionOn);
+    updateQuality();
+  }
+
+  function countFilledOptionals() {
+    let count = 0;
+    const selects = document.querySelectorAll('#dynamicFields select, #academicLevel, #profStrictness');
+    selects.forEach(s => { if (s.value) count++; });
+    const inputs = document.querySelectorAll('#dynamicFields input[type=text]');
+    inputs.forEach(i => { if (i.value.trim()) count++; });
+    if (aiDetectionOn) count++;
+    return count;
+  }
+
+  function updateQuality() {
+    let score = 15;
+    const tips = [];
+    if (document.getElementById('assignmentInput').value.trim().length > 20) score += 35;
+    else tips.push('paste your assignment');
+    const filled = countFilledOptionals();
+    score += Math.min(filled * 10, 50);
+    if (filled < 3) tips.push('fill in the optional fields below');
+    score = Math.min(score, 100);
+    document.getElementById('qualityBar').style.width = score + '%';
+    document.getElementById('qualityScore').textContent = score + '%';
+    const tipEl = document.getElementById('qualityTip');
+    if (score >= 90) tipEl.textContent = '🔥 Maximum quality — your prompt will be exceptional';
+    else if (score >= 60) tipEl.textContent = '✨ Looking good — try adding more optional details for an even better prompt';
+    else if (score >= 35) tipEl.textContent = '💡 Good start — ' + (tips[0] || 'keep filling in the optional fields');
+    else tipEl.textContent = '💡 Paste your assignment and fill in the optional fields for the best prompt';
+  }
+
+  function collectDynamicValues() {
+    const parts = [];
+    const selects = document.querySelectorAll('#dynamicFields select');
+    selects.forEach(s => { if (s.value) parts.push(`${s.labels?.[0]?.innerText?.replace(/optional/gi,'').trim() || s.id}: ${s.options[s.selectedIndex].text}`); });
+    const inputs = document.querySelectorAll('#dynamicFields input[type=text]');
+    inputs.forEach(i => { if (i.value.trim()) parts.push(`${i.labels?.[0]?.innerText?.replace(/optional/gi,'').trim() || i.id}: ${i.value.trim()}`); });
+    return parts.join('\n');
+  }
+
+  async function generate() {
+    if (credits <= 0) {
+      document.getElementById('upgradeWall').style.display = 'block';
+      document.getElementById('upgradeWall').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    const assignment = document.getElementById('assignmentInput').value.trim();
+    if (!assignment) {
+      const ta = document.getElementById('assignmentInput');
+      ta.style.borderColor = 'rgba(255,107,107,0.5)';
+      setTimeout(() => ta.style.borderColor = '', 1500);
+      return;
+    }
+
+    const subject = document.getElementById('subject').value;
+    const outputType = document.getElementById('outputType').value;
+    const academicLevel = document.getElementById('academicLevel').value;
+    const profStrictness = document.getElementById('profStrictness').value;
+    const dynamicValues = collectDynamicValues();
+
+    const btn = document.getElementById('generateBtn');
+    const resultArea = document.getElementById('resultArea');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Engineering your prompt...';
+    resultArea.style.display = 'none';
+
+    const contextLines = [
+      `Assignment type: ${outputType}`,
+      `Subject: ${subject}`,
+      academicLevel ? `Academic level: ${academicLevel}` : '',
+      profStrictness ? `Professor type: ${profStrictness}` : '',
+      dynamicValues,
+      aiDetectionOn ? `IMPORTANT: The engineered prompt must explicitly instruct the AI to write in a natural, varied, human-sounding voice. Vary sentence length and structure, use natural transitions, avoid robotic or overly formal patterns, and write as a real student would — not a machine.` : ''
+    ].filter(Boolean).join('\n');
+
+    const systemPrompt = `You are an elite prompt engineer specializing in academic assignments. Your job is to take a student's raw assignment and transform it into a masterfully crafted AI prompt tailored to their exact needs.
+
+Your engineered prompt must:
+1. Open with a precise role and context framing for the AI
+2. Specify exact format, structure, length, and style requirements
+3. Include academic standards, expectations, and quality benchmarks
+4. Add nuanced instructions the student didn't think to include
+5. Address the specific assignment type with appropriate technical detail
+6. Be immediately usable — paste directly into ChatGPT or Claude
+
+Output ONLY the final engineered prompt. No explanation, no preamble, no meta-commentary. Just the prompt.`;
+
+    const userMsg = `Transform this into a masterfully engineered AI prompt.
+
+Assignment: ${assignment}
+
+Context:
+${contextLines}
+
+Generate the optimized prompt now:`;
+
+    try {
+      const response = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1200,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userMsg }]
+        })
+      });
+      const data = await response.json();
+      if (data.error) {
+        resultArea.innerHTML = `<div class="error-box">API Error: ${data.error.message || JSON.stringify(data.error)}</div>`;
+      } else {
+        const result = data.content?.[0]?.text;
+        if (result) {
+          resultArea.innerHTML = `
+            <div class="result-label"><span>Your Engineered Prompt</span><span class="quality-badge">PRO QUALITY</span></div>
+            <div class="output-box" id="outputText"></div>
+            <button class="btn-copy" id="copyBtn" onclick="copyPrompt()">Copy Prompt</button>`;
+          document.getElementById('outputText').textContent = result;
+          resultArea.style.display = 'block';
+          resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          credits--;
+          document.getElementById('creditsLeft').textContent = credits;
+          if (credits <= 0) setTimeout(() => { document.getElementById('upgradeWall').style.display = 'block'; }, 1500);
+        } else {
+          resultArea.innerHTML = `<div class="error-box">Unexpected response:\n${JSON.stringify(data, null, 2)}</div>`;
+        }
+      }
+    } catch(err) {
+      resultArea.innerHTML = `<div class="error-box">Network error: ${err.message}</div>`;
+    }
+    resultArea.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = 'Generate My Prompt →';
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('outputText').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.textContent = '✓ Copied to clipboard';
+      setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'Copy Prompt'; }, 2000);
+    });
+  }
+
+  // Init
+  switchDynamicFields();
+</script>
+</body>
+</html>
