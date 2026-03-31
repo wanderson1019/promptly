@@ -354,7 +354,7 @@ function applyDetection(detected){
   if(detected.assignmentType) document.getElementById('typeTag').classList.add('visible');
   const sL=document.getElementById('subject').options[document.getElementById('subject').selectedIndex]?.text||'';
   const tL=document.getElementById('outputType').options[document.getElementById('outputType').selectedIndex]?.text||'';
-  const lL=detected.academicLevel?(document.getElementById('academicLevel').options[document.getElementById('academicLevel').selectedIndex]?.text||')':'';
+  const lL=detected.academicLevel?(document.getElementById('academicLevel').options[document.getElementById('academicLevel').selectedIndex]?.text||''):'';
   const parts=[tL,sL,lL].filter(Boolean);
   document.getElementById('detectedText').innerHTML=`✦ Detected: <span>${parts.join(' · ')}</span> — look right?`;
   document.getElementById('detectionBanner').classList.add('visible');
