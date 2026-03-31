@@ -541,20 +541,47 @@ async function generateDraft(){
     dBtn.innerHTML='<span class="spinner"></span> Humanizing output...';
 
     try{
-      const aggressive=aiDetectionOn?'Be extremely aggressive in removing AI patterns. Make it sound unmistakably human.':'';
-      const humanizeSys=`You are a writing editor specializing in making AI-generated text sound authentically human. Rewrite so it reads naturally like a real student wrote it.
+      const aggressive=aiDetectionOn?'This text MUST pass ZeroGPT as 100% human. Be maximally aggressive.':'';
+      const humanizeSys=`You are an expert at rewriting AI-generated academic text so it passes AI detectors like ZeroGPT as 100% human-written. ZeroGPT detects AI by measuring two things: PERPLEXITY (how predictable word choices are) and BURSTINESS (how much sentence length varies). Your job is to destroy both signals.
 
-Rules:
-- Vary sentence length dramatically — mix very short sentences with longer complex ones
-- Remove ALL of these if present: "In conclusion", "It is important to note", "Furthermore", "Moreover", "In today's society", "Since the dawn of time", "It is worth noting", "Delve into", "Tapestry of", "It is crucial to", "One must consider"
-- Add natural imperfections — occasional contractions, slightly informal word choice, genuine transitions
-- Match style to academic level: ${ctx.academicLevel||'college student'}
+CRITICAL RULES — every single one must be applied:
+
+BURSTINESS (most important):
+- Mix sentence lengths aggressively: some sentences should be 3-5 words. Some 25-35 words. Never three sentences in a row of similar length.
+- Start at least 2 sentences per paragraph with a short punchy opener. Like this. Then go long.
+- Vary paragraph length too — one paragraph can be 2 sentences, the next 5.
+
+PERPLEXITY (second most important):
+- Replace predictable academic words with slightly unexpected alternatives. "demonstrates" → "shows", "illustrates" → "makes clear", "significant" → "real", "however" → "but", "therefore" → "so"
+- Use slightly imperfect or informal word choices at least once per paragraph
+- Add a contraction at least once per paragraph: don't, it's, he's, that's, isn't, wasn't
+
+VOICE AND PERSONAL TONE:
+- Add at least one personal observation or mild opinion per page — something like "What's interesting here is..." or "This actually makes sense when you think about it" or "And that's the part most people miss"
+- Use casual transitions like: "And that's exactly why...", "Here's the thing:", "The real point is...", "What this means is...", "Basically,", "In other words," — NOT "Furthermore", "Moreover", "In conclusion", "It is important to note", "It is worth noting", "Delve into", "Tapestry", "It is crucial to"
+
+BANNED PHRASES — delete and replace every single one:
+"In conclusion" → "When it all comes down to it" or just end naturally
+"Furthermore" → "And also" or "On top of that"  
+"Moreover" → "What's more" or "Plus"
+"It is important to note" → "Worth noting is" or just say it directly
+"In today's society" → delete entirely, rephrase the sentence
+"Delve into" → "look at" or "get into"
+"It is crucial to" → "You have to" or "The key is to"
+"One must consider" → "It's worth thinking about"
+"Tapestry" → anything else
+"Demonstrates" → "shows"
+"Illustrates" → "shows" or "makes clear"
+
+STRUCTURE RULES:
 - Never start two consecutive sentences with the same word
-- Vary paragraph length
-- Make the thesis (if essay) sound like a real student wrote it
-- Do NOT change any facts, arguments, equations, code, citations, or substantive content
-- ${aggressive}
-Output ONLY the final humanized draft. No commentary.`;
+- Never have more than 2 sentences with similar structure in a row
+- Break up any paragraph that sounds like a list of equal-weight points
+- If it's an essay, make the thesis sound like a student actually thought of it, not generated it
+
+DO NOT change: facts, arguments, quotes, citations, equations, code, names, dates, or any substantive content.
+${aggressive}
+Output ONLY the rewritten text. No explanation, no commentary, no preamble.`;
       const hr=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,system:humanizeSys,messages:[{role:"user",content:`Humanize this draft:\n\n${fullDraft}`}]})});
       const hd=await hr.json();
       const humanized=hd.content?.[0]?.text;
